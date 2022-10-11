@@ -397,8 +397,6 @@ class DiscontScrapesDemo(Controller):
         (for back and forth motion)
         """
         rng = np.random.RandomState(0)
-        py_impact = PyImpact(rng=rng)
-        self.py_impact = py_impact
         # starting position of objects
         zstart = self.surface_record.bounds["back"]["z"]-1.5
         center = zstart+1.2+1.2
@@ -439,10 +437,6 @@ class DiscontScrapesDemo(Controller):
         # send the forward motion
         self.teleport_motion(velocity,list_pos,velocity2,list_pos2)
 
-        # re-initialize py-audio so that sound is not additive
-        rng = np.random.RandomState(0)
-        py_impact = PyImpact(rng=rng)
-        self.py_impact = py_impact
         # c.communicate({"$type": "step_physics", "frames": waiter_time})
         time.sleep(self.waiter_time)
         
@@ -457,8 +451,6 @@ class DiscontScrapesDemo(Controller):
     
     def apply_force_audio_cube(self):
         rng = np.random.RandomState(0)
-        py_impact = PyImpact(rng=rng)
-        self.py_impact = py_impact
         self.cube_audio_material = AudioMaterial.wood_medium
         cube_audio = ObjectAudioStatic(name="cube",
                                         object_id=self.cube_id2,
@@ -515,7 +507,7 @@ class DiscontScrapesDemo(Controller):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Simple argument parser")
-    parser.add_argument("-c", action="store", dest="config_file")
+    parser.add_argument("-c", action="store", dest="config_file", default="config.ini")
     result = parser.parse_args()
     directory_cfg = str(Path.cwd().joinpath(result.config_file).resolve())
 
