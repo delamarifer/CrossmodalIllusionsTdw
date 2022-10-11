@@ -122,7 +122,7 @@ class DiscontScrapesDemo(Controller):
                                                                       monitor_index=int(configs["monitor_index"]))
         # Initialize PyImpact.
         rng = np.random.RandomState(0)
-        self.py_impact = PyImpact(rng=rng, auto=False)
+        self.py_impact = PyImpact(rng=rng)
         self.commands = []
         self.capture_path = EXAMPLE_CONTROLLER_OUTPUT_PATH.joinpath("crossmodal_illusions").joinpath(self.run_type + ".mp4")
 
@@ -145,7 +145,7 @@ class DiscontScrapesDemo(Controller):
         # Set a random number generator with a hardcoded random seed so that the generated audio will always be the same.
         # If you want the audio to change every time you run the controller, do this instead: `py_impact = PyImpact()`.
         rng = np.random.RandomState(0)
-        py_impact = PyImpact(rng=rng, auto=False)
+        py_impact = PyImpact(rng=rng)
         self.add_ons.extend([camera, audio, py_impact])
 
         # add empty room,  skybox and other screen-size and light settings
@@ -395,7 +395,7 @@ class DiscontScrapesDemo(Controller):
         (for back and forth motion)
         """
         rng = np.random.RandomState(0)
-        py_impact = PyImpact(rng=rng, auto=False)
+        py_impact = PyImpact(rng=rng)
         self.py_impact = py_impact
         # starting position of objects
         zstart = self.surface_record.bounds["back"]["z"]-1.5
@@ -439,7 +439,7 @@ class DiscontScrapesDemo(Controller):
 
         # re-initialize py-audio so that sound is not additive
         rng = np.random.RandomState(0)
-        py_impact = PyImpact(rng=rng, auto=False)
+        py_impact = PyImpact(rng=rng)
         self.py_impact = py_impact
         # c.communicate({"$type": "step_physics", "frames": waiter_time})
         time.sleep(self.waiter_time)
@@ -455,7 +455,7 @@ class DiscontScrapesDemo(Controller):
     
     def apply_force_audio_cube(self):
         rng = np.random.RandomState(0)
-        py_impact = PyImpact(rng=rng, auto=False)
+        py_impact = PyImpact(rng=rng)
         self.py_impact = py_impact
         self.cube_audio_material = AudioMaterial.wood_medium
         cube_audio = ObjectAudioStatic(name="cube",
