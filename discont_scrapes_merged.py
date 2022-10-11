@@ -46,9 +46,10 @@ class DiscontScrapesDemo(Controller):
         
         pbased = bool(int(configs["physics_based"]))
         linearbool = bool(int(configs["linear_vel"]))
+        shadowbool = bool(int(configs["shadow"]))
         self.linear_vel = linearbool
 
-        self.run_type = "cam_" + configs['cam_view'] + "_discontlen_" + configs['discont_len'] + "_physics_" + str(pbased) + "__linear__" + str(linearbool)
+        self.run_type = "cam_" + configs['cam_view'] + "_discontlen_" + configs['discont_len'] + "_physics_" + str(pbased) + "_linear_" + str(linearbool) + "_shadow_" + str(shadowbool)
 
         Controller.MODEL_LIBRARIANS["models_core.json"] = ModelLibrarian("models_core.json")
         Controller.MODEL_LIBRARIANS["models_flex.json"] = ModelLibrarian("models_flex.json")
@@ -197,7 +198,7 @@ class DiscontScrapesDemo(Controller):
         self.commands.extend(self.get_add_physics_object(model_name="cube",
                                                         library="models_flex.json",
                                                         object_id=self.shadow_cube,
-                                                        position={"x": 0.2,
+                                                        position={"x": 0,
                                                                 "y": self.surface_record.bounds["top"]["y"]+ self.cube_posy,
                                                                 "z": zstart},
                                                         scale_factor=self.scale_factor_cube,
@@ -221,7 +222,7 @@ class DiscontScrapesDemo(Controller):
                                             position={"x": -0.3,
                                                 "y": self.surface_record.bounds["top"]["y"]+ self.cube_posy,
                                                 "z": self.surface_record.bounds["back"]["z"]+0.2-0.7},
-                                            object_id=self.c.get_unique_id()))
+                                            object_id=self.get_unique_id()))
         apple2 = self.get_unique_id()
         self.commands.extend(self.get_add_physics_object(model_name="apple",
                                     position={"x": -0.15,
@@ -292,6 +293,7 @@ class DiscontScrapesDemo(Controller):
 
         # add second cube for physically implausible conditions
         if self.shadow_present:
+            self.shadow_cube = self.get_unique_id() 
             self.add_shadow_cube(zstart)
 
         # add apple obstcles for physically implausible conditions
@@ -369,7 +371,7 @@ class DiscontScrapesDemo(Controller):
             if self.shadow_present:
                 self.communicate([{"$type": "teleport_object",
                                     "position":
-                                        {"x": 0, "y": self.surface_record.bounds["top"]["y"]+self.cube_posy, "z": z2},
+                                        {"x": 0, "y": self.surface_record.bounds["top"]["y"]+self.cube_posy, "z": z},
                                     "id": self.shadow_cube}])
             
             # Teleport second non-silent cube
