@@ -68,8 +68,9 @@ class DiscontScrapesDemo(Controller):
         self.cube_posy = cubey[self.scrape_surface_model_name]
         # scale of the table depending on type
         table_scale ={'b05_table_new':{"x": 1, "y": 1.3, "z": 14},"willisau_varion_w3_table":{"x": 0.5, "y": 1, "z": 13}, 'glass_table':{"x": 0.8, "y": 1, "z": 12}}
+        table2_scale ={'b05_table_new':{"x": 1, "y": 1.3, "z": 14},"willisau_varion_w3_table":{"x": 0.5, "y": 1, "z": 13}, 'glass_table':{"x": 0.8, "y": 1, "z": 24}}
         self.table1_scale = table_scale[self.scrape_surface_model_name]
-        self.table2_scale = table_scale[self.scrape_surface2_model_name]
+        self.table2_scale = table2_scale[self.scrape_surface2_model_name]
         impact_mat = ["plastic_hard_1", "wood_soft_1", "glass_1", "stone_4", "metal_1"]
         self.impact_mat1 = impact_mat[int(configs['scrape1'])]
         self.impact_mat2 = impact_mat[int(configs['scrape2'])]
@@ -448,11 +449,11 @@ class DiscontScrapesDemo(Controller):
 
         self.communicate({"$type": "terminate"})
     
-    def apply_force_audio_cube(self):
+    def apply_force_visual_audio_cube(self, visual_cubeid, audio_cubeid):
         rng = np.random.RandomState(0)
         self.cube_audio_material = AudioMaterial.wood_medium
         cube_audio = ObjectAudioStatic(name="cube",
-                                        object_id=self.cube_id2,
+                                        object_id=audio_cubeid,
                                         mass=self.cube_mass,
                                         bounciness=self.cube_bounciness,
                                         amp=0.2,
@@ -460,49 +461,80 @@ class DiscontScrapesDemo(Controller):
                                         size=1,
                                         material=self.cube_audio_material)
         # Reset PyImpact and add it to the list of add-ons so that it automatically generates audio.
-        self.py_impact = PyImpact(rng=rng, static_audio_data_overrides={self.cube_id2: cube_audio}, initial_amp=0.9)
+        self.py_impact = PyImpact(rng=rng, static_audio_data_overrides={audio_cubeid: cube_audio}, initial_amp=0.9)
         self.add_ons.append(self.py_impact)
+        
+
+        forth_move_commands = [
+                          {"$type": "apply_force_magnitude_to_object",
+                           "magnitude": 0.12,
+                           "id": audio_cubeid},
+                           {"$type": "apply_force_magnitude_to_object",
+                           "magnitude": 0.12,
+                           "id": audio_cubeid},
+        ]
+        self.communicate(forth_move_commands)
+        for i in range(40):
+            self.communicate([])
         # Apply a lateral force to start scraping.
+        
         self.communicate({"$type": "apply_force_magnitude_to_object",
-                           "magnitude": 0.4,
-                           "id": self.cube_id2})
-        for i in range(90):
+                                        "magnitude": 0.6,
+                                        "id": visual_cubeid})
+
+        for i in range(40):
             self.communicate([])
 
-        self.communicate({"$type": "apply_force_magnitude_to_object",
-                           "magnitude": 0.4,
-                           "id": self.cube_id2})
+        self.communicate([{"$type": "apply_force_magnitude_to_object",
+                           "magnitude": 0.15,
+                           "id": audio_cubeid},
+                           {"$type": "apply_force_magnitude_to_object",
+                           "magnitude": 0.15,
+                           "id": audio_cubeid},
+                           
+                           ])
 
-        for i in range(200):
+        for i in range(120):
+            self.communicate([])
+        
+        back_move_commands = [
+                          {"$type": "apply_force_magnitude_to_object",
+                           "magnitude": -0.15,
+                           "id": audio_cubeid},
+                           {"$type": "apply_force_magnitude_to_object",
+                           "magnitude": -0.15,
+                           "id": audio_cubeid},
+        ]
+        self.communicate(back_move_commands)
+        for i in range(30):
+            self.communicate([])
+        # Apply a lateral force to start scraping.
+        self.communicate(back_move_commands)
+        self.communicate({"$type": "apply_force_magnitude_to_object",
+                                        "magnitude": -0.6,
+                                        "id": visual_cubeid})
+
+        for i in range(50):
             self.communicate([])
 
-        self.communicate({"$type": "apply_force_magnitude_to_object",
-                           "magnitude": -0.4,
-                           "id": self.cube_id2})
-        for i in range(90):
+        self.communicate([{"$type": "apply_force_magnitude_to_object",
+                           "magnitude": -0.15,
+                           "id": audio_cubeid},
+                           {"$type": "apply_force_magnitude_to_object",
+                           "magnitude": -0.15,
+                           "id": audio_cubeid},
+                           
+                           ])
+        
+        for i in range(120):
             self.communicate([])
-
-        self.communicate({"$type": "apply_force_magnitude_to_object",
-                           "magnitude": -0.4,
-                           "id": self.cube_id2})
+        
         # Remove PyImpact from the list of add-ons.
         self.add_ons.pop(-1)
 
-    def apply_force_visual_cube(self):
-        self.communicate({"$type": "apply_force_magnitude_to_object",
-                           "magnitude": 0.6,
-                           "id": self.cube_id})
-        for i in range(200):
-            self.communicate([])
-        self.communicate({"$type": "apply_force_magnitude_to_object",
-                           "magnitude": -0.6,
-                           "id": self.cube_id})
-
     def apply_forces(self):
 
-
-        self.apply_force_visual_cube()
-        self.apply_force_audio_cube()
+        self.apply_force_visual_audio_cube(self.cube_id, self.cube_id2)
          # Define audio for the cube.
      
 
