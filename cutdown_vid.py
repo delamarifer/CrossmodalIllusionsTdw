@@ -1,8 +1,8 @@
 import os
 import pathlib as path
 
-imgs_dir2 = os.path.join(path.Path.home(), "Desktop/discont_illusion_testing/pre_videos/")
-out_dir = os.path.join(path.Path.home(), "Desktop/discont_illusion_testing/videos/")
+imgs_dir2 = os.path.join(path.Path.home(), "/Users/TDWAdmin/tdw_example_controller_output/crossmodal_illusions/")
+out_dir = os.path.join(path.Path.cwd(), "/Users/TDWAdmin/Developer/CrossmodalIllusionsTdw/videos/")
 for vidfile in os.listdir(imgs_dir2):
      if os.path.join(imgs_dir2, vidfile).endswith(".mp4"):
         outfile = out_dir + vidfile
