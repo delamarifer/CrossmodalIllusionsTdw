@@ -146,8 +146,7 @@ class DiscontScrapesDemo(Controller):
         # Set a random number generator with a hardcoded random seed so that the generated audio will always be the same.
         # If you want the audio to change every time you run the controller, do this instead: `py_impact = PyImpact()`.
         rng = np.random.RandomState(0)
-        py_impact = PyImpact(rng=rng)
-        self.add_ons.extend([camera, audio, py_impact])
+        self.add_ons.extend([camera, audio])
 
         # add empty room,  skybox and other screen-size and light settings
         commands = [TDWUtils.create_empty_room(40, 40),
@@ -468,9 +467,9 @@ class DiscontScrapesDemo(Controller):
                                         resonance=0.25,
                                         size=1,
                                         material=self.cube_audio_material)
-        # Reset PyImpact.
-        self.py_impact.reset(static_audio_data_overrides={self.cube_id2: cube_audio}, initial_amp=0.9)
-   
+        # Reset PyImpact and add it to the list of add-ons so that it automatically generates audio.
+        self.py_impact = PyImpact(rng=rng, static_audio_data_overrides={self.cube_id2: cube_audio}, initial_amp=0.9)
+        self.add_ons.append(self.py_impact)
         # Apply a lateral force to start scraping.
         self.communicate({"$type": "apply_force_magnitude_to_object",
                            "magnitude": 0.4,
@@ -494,6 +493,8 @@ class DiscontScrapesDemo(Controller):
         self.communicate({"$type": "apply_force_magnitude_to_object",
                            "magnitude": -0.4,
                            "id": self.cube_id2})
+        # Remove PyImpact from the list of add-ons.
+        self.add_ons.pop(-1)
 
     def apply_force_visual_cube(self):
         self.communicate({"$type": "apply_force_magnitude_to_object",
