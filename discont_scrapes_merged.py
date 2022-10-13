@@ -17,6 +17,7 @@ from tdw.backend.paths import EXAMPLE_CONTROLLER_OUTPUT_PATH
 from pathlib import Path
 from tdw.add_ons.physics_audio_recorder import PhysicsAudioRecorder
 import psutil
+from tdw.add_ons.interior_scene_lighting import InteriorSceneLighting
 import argparse
 from tdw.controller import Controller
 from tdw.tdw_utils import TDWUtils
@@ -47,9 +48,10 @@ class DiscontScrapesDemo(Controller):
         pbased = bool(int(configs["physics_based"]))
         linearbool = bool(int(configs["linear_vel"]))
         shadowbool = bool(int(configs["shadow"]))
+        self.lightx = bool(int(configs["lightx"]))
         self.linear_vel = linearbool
 
-        self.run_type = "cam_" + configs['cam_view'] + "_discontlen_" + configs['discont_len'] + "_physics_" + str(pbased) + "_linear_" + str(linearbool) + "_shadow_" + str(shadowbool)
+        self.run_type = "cam_" + configs['cam_view'] + "_discontlen_" + configs['discont_len'] + "_physics_" + str(pbased) + "_linear_" + str(linearbool) + "_shadow_" + str(shadowbool) + str(self.lightx)
 
         Controller.MODEL_LIBRARIANS["models_core.json"] = ModelLibrarian("models_core.json")
         Controller.MODEL_LIBRARIANS["models_flex.json"] = ModelLibrarian("models_flex.json")
@@ -146,7 +148,13 @@ class DiscontScrapesDemo(Controller):
         # Set a random number generator with a hardcoded random seed so that the generated audio will always be the same.
         # If you want the audio to change every time you run the controller, do this instead: `py_impact = PyImpact()`.
         rng = np.random.RandomState(0)
-        self.add_ons.extend([camera, audio])
+
+        if not self.lightx:
+            hdri_skybox = "bergen_4k"
+            interior_scene_lighting = InteriorSceneLighting(hdri_skybox=hdri_skybox)
+            self.add_ons.extend([camera, audio,interior_scene_lighting])
+        else:
+            self.add_ons.extend([camera, audio])
 
         # add empty room,  skybox and other screen-size and light settings
         commands = [TDWUtils.create_empty_room(40, 40),
@@ -156,7 +164,7 @@ class DiscontScrapesDemo(Controller):
                      "width": self.window_w,
                      "height": self.window_h},
                     {"$type": "rotate_directional_light_by",
-                     "angle": 25},
+                     "angle": 175},
                     {"$type": "set_aperture",
                      "aperture": 8.0},
                     {"$type": "set_shadow_strength",
@@ -199,7 +207,7 @@ class DiscontScrapesDemo(Controller):
                                                         object_id=self.shadow_cube,
                                                         position={"x": 0,
                                                                 "y": self.surface_record.bounds["top"]["y"]+ self.cube_posy,
-                                                                "z": zstart},
+                                                                "z": zstart+2.4+2.4},
                                                         scale_factor=self.scale_factor_cube,
                                                         default_physics_values=False,
                                                         mass=self.cube_mass,
@@ -339,6 +347,7 @@ class DiscontScrapesDemo(Controller):
 
             z2 = list_pos2[i]
             z = list_pos[i]
+            zshadow = list_pos[len(list_pos)-i-1]
             # Three directional vectors perpendicular to the collision.
             
             for k in range(3):
@@ -370,7 +379,7 @@ class DiscontScrapesDemo(Controller):
             if self.shadow_present:
                 self.communicate([{"$type": "teleport_object",
                                     "position":
-                                        {"x": 0, "y": self.surface_record.bounds["top"]["y"]+self.cube_posy, "z": z},
+                                        {"x": 0, "y": self.surface_record.bounds["top"]["y"]+self.cube_posy, "z": zshadow},
                                     "id": self.shadow_cube}])
             
             # Teleport second non-silent cube
@@ -403,28 +412,34 @@ class DiscontScrapesDemo(Controller):
         path_len = 60
 
         # declare position and velocity vectors for continous cube
-        if self.linear_vel:
+        if self.linear_vel == 0:
             velocity = np.linspace(1.5,0.5,path_len)
-        else:
+        elif self.linear_vel == 1:
             # velocity = self.get_poly_velocity(path_len)
             velocity = get_poly_velocity2(path_len,0)
             # list_pos = get_poly_velocity2(path_len,0)
             # [print(x) for x in list_pos]
+       
 
         list_pos = np.linspace(zstart,end,path_len)
 
 
         path_len2 = int(path_len/2 - math.ceil(self.discont_len/2))
-        if self.linear_vel:   
+        if self.linear_vel == 0:  
             pre_velocity2 = np.linspace(1.5,1,path_len2)
             between_vel = np.repeat([0.000001], self.discont_len)
             post_velocity2 = np.linspace(1,0.5,path_len2)
             velocity2 = np.hstack(( pre_velocity2,between_vel,post_velocity2)).ravel()       
-        else:
+        elif self.linear_vel == 1:
             vel_pathlen2 = int(path_len/2 - math.ceil(self.discont_len/2))
             # velocity2 = self.get_poly_velocity(vel_pathlen2)
             velocity2 = get_poly_velocity2(vel_pathlen2, self.discont_len)
             print("*****", np.size(velocity2))
+        else:
+            pre_velocity2 = np.linspace(1.5,0.3,path_len2)
+            between_vel = np.repeat([0.000001], self.discont_len)
+            post_velocity2 = np.linspace(1.5,0.3,path_len2)
+            velocity2 = np.hstack(( pre_velocity2,between_vel,post_velocity2)).ravel()
     
          # declare position and velocity vectors for discontinous cube (add still frames in middle)
         pre_list_pos = np.linspace(zstart,center,path_len2)
@@ -448,11 +463,11 @@ class DiscontScrapesDemo(Controller):
 
         self.communicate({"$type": "terminate"})
     
-    def apply_force_audio_cube(self):
+    def apply_force_visual_audio_cube(self, visual_cubeid, audio_cubeid):
         rng = np.random.RandomState(0)
         self.cube_audio_material = AudioMaterial.wood_medium
         cube_audio = ObjectAudioStatic(name="cube",
-                                        object_id=self.cube_id2,
+                                        object_id=audio_cubeid,
                                         mass=self.cube_mass,
                                         bounciness=self.cube_bounciness,
                                         amp=0.2,
@@ -460,49 +475,82 @@ class DiscontScrapesDemo(Controller):
                                         size=1,
                                         material=self.cube_audio_material)
         # Reset PyImpact and add it to the list of add-ons so that it automatically generates audio.
-        self.py_impact = PyImpact(rng=rng, static_audio_data_overrides={self.cube_id2: cube_audio}, initial_amp=0.9)
+        self.py_impact = PyImpact(rng=rng, static_audio_data_overrides={audio_cubeid: cube_audio}, initial_amp=0.9)
         self.add_ons.append(self.py_impact)
+        
+
+        forth_move_commands = [
+                          {"$type": "apply_force_magnitude_to_object",
+                           "magnitude": 0.12,
+                           "id": audio_cubeid},
+                           {"$type": "apply_force_magnitude_to_object",
+                           "magnitude": 0.12,
+                           "id": audio_cubeid},
+        ]
+        self.communicate(forth_move_commands)
+        for i in range(40):
+            self.communicate([])
         # Apply a lateral force to start scraping.
+        # self.communicate(forth_move_commands)
         self.communicate({"$type": "apply_force_magnitude_to_object",
-                           "magnitude": 0.4,
-                           "id": self.cube_id2})
-        for i in range(90):
+                                        "magnitude": 0.6,
+                                        "id": visual_cubeid})
+
+        for i in range(40):
             self.communicate([])
 
-        self.communicate({"$type": "apply_force_magnitude_to_object",
-                           "magnitude": 0.4,
-                           "id": self.cube_id2})
+        self.communicate([{"$type": "apply_force_magnitude_to_object",
+                           "magnitude": 0.15,
+                           "id": audio_cubeid},
+                           {"$type": "apply_force_magnitude_to_object",
+                           "magnitude": 0.15,
+                           "id": audio_cubeid},
+                           
+                           ])
 
-        for i in range(200):
+        for i in range(120):
+            self.communicate([])
+        
+        back_move_commands = [
+                          {"$type": "apply_force_magnitude_to_object",
+                           "magnitude": -0.15,
+                           "id": audio_cubeid},
+                           {"$type": "apply_force_magnitude_to_object",
+                           "magnitude": -0.15,
+                           "id": audio_cubeid},
+        ]
+        self.communicate(back_move_commands)
+        for i in range(30):
+            self.communicate([])
+        # Apply a lateral force to start scraping.
+        self.communicate(back_move_commands)
+        self.communicate({"$type": "apply_force_magnitude_to_object",
+                                        "magnitude": -0.6,
+                                        "id": visual_cubeid})
+
+        for i in range(50):
             self.communicate([])
 
-        self.communicate({"$type": "apply_force_magnitude_to_object",
-                           "magnitude": -0.4,
-                           "id": self.cube_id2})
-        for i in range(90):
+        self.communicate([{"$type": "apply_force_magnitude_to_object",
+                           "magnitude": -0.15,
+                           "id": audio_cubeid},
+                           {"$type": "apply_force_magnitude_to_object",
+                           "magnitude": -0.15,
+                           "id": audio_cubeid},
+                           
+                           ])
+        
+        for i in range(120):
             self.communicate([])
-
-        self.communicate({"$type": "apply_force_magnitude_to_object",
-                           "magnitude": -0.4,
-                           "id": self.cube_id2})
+        
         # Remove PyImpact from the list of add-ons.
         self.add_ons.pop(-1)
 
-    def apply_force_visual_cube(self):
-        self.communicate({"$type": "apply_force_magnitude_to_object",
-                           "magnitude": 0.6,
-                           "id": self.cube_id})
-        for i in range(200):
-            self.communicate([])
-        self.communicate({"$type": "apply_force_magnitude_to_object",
-                           "magnitude": -0.6,
-                           "id": self.cube_id})
-
     def apply_forces(self):
 
-
-        self.apply_force_visual_cube()
-        self.apply_force_audio_cube()
+        self.apply_force_visual_audio_cube(self.cube_id, self.cube_id2)
+         # Define audio for the cube.
+     
          # Define audio for the cube.
      
 
@@ -527,7 +575,3 @@ if __name__ == "__main__":
     else:
         scrapesObj.teleport_objects()
     scrapesObj.terminate_scene()
-
-
-
-
