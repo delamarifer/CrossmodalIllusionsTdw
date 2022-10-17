@@ -103,12 +103,14 @@ class DiscontScrapesDemo(Controller):
             {"x": 1, "y": 1.2, "z": 3.8},
             {"x": 0, "y": 1.4, "z": -3.5},
             {"x": 4.1, "y":3, "z": 0.3},
+            {"x": -3.5, "y":2, "z": 0.3},
         ]
         cam_view = [
             {"x": -0.4, "y": 0.5, "z": 0},
             {"x": -0.4, "y": 0.5, "z": 0},
             {"x": 0, "y": 0.5, "z": 0},
-            {"x": 0.7, "y":0.5, "z": 0.3}
+            {"x": 0.7, "y":0.5, "z": 0.3},
+            {"x": 0.7, "y":1, "z": 0.3}
         ]
         self.look_at = cam_view[int(configs['cam_view'])]
         self.look_at2 = self.look_at
@@ -258,7 +260,7 @@ class DiscontScrapesDemo(Controller):
             cube_id = self.cube_id2
             cube_mass = self.cube2_mass
             self.xpos = self.surface_record.bounds["back"]["x"]+8
-            self.ypos = self.surface_record2.bounds["top"]["y"]+self.cube_posy+0.2
+            self.ypos = self.surface_record2.bounds["top"]["y"]
 
         self.commands.extend(self.get_add_physics_object(model_name="cube",
                                                     library="models_flex.json",
@@ -477,68 +479,30 @@ class DiscontScrapesDemo(Controller):
         # Reset PyImpact and add it to the list of add-ons so that it automatically generates audio.
         self.py_impact = PyImpact(rng=rng, static_audio_data_overrides={audio_cubeid: cube_audio}, initial_amp=0.9)
         self.add_ons.append(self.py_impact)
-        
+    
 
-        forth_move_commands = [
-                          {"$type": "apply_force_magnitude_to_object",
-                           "magnitude": 0.12,
-                           "id": audio_cubeid},
-                           {"$type": "apply_force_magnitude_to_object",
-                           "magnitude": 0.12,
-                           "id": audio_cubeid},
-        ]
-        self.communicate(forth_move_commands)
-        for i in range(40):
-            self.communicate([])
-        # Apply a lateral force to start scraping.
-        # self.communicate(forth_move_commands)
-        self.communicate({"$type": "apply_force_magnitude_to_object",
+
+        self.communicate([
+                        {"$type": "apply_force_magnitude_to_object",
                                         "magnitude": 0.6,
-                                        "id": visual_cubeid})
+                                        "id": audio_cubeid},
+                        
+                        {"$type": "apply_force_magnitude_to_object",
+                                        "magnitude": 0.6,
+                                        "id": visual_cubeid}])
 
-        for i in range(40):
-            self.communicate([])
-
-        self.communicate([{"$type": "apply_force_magnitude_to_object",
-                           "magnitude": 0.15,
-                           "id": audio_cubeid},
-                           {"$type": "apply_force_magnitude_to_object",
-                           "magnitude": 0.15,
-                           "id": audio_cubeid},
-                           
-                           ])
 
         for i in range(120):
             self.communicate([])
-        
-        back_move_commands = [
-                          {"$type": "apply_force_magnitude_to_object",
-                           "magnitude": -0.15,
-                           "id": audio_cubeid},
-                           {"$type": "apply_force_magnitude_to_object",
-                           "magnitude": -0.15,
-                           "id": audio_cubeid},
-        ]
-        self.communicate(back_move_commands)
-        for i in range(30):
-            self.communicate([])
-        # Apply a lateral force to start scraping.
-        self.communicate(back_move_commands)
-        self.communicate({"$type": "apply_force_magnitude_to_object",
+
+     
+        self.communicate([
+                    {"$type": "apply_force_magnitude_to_object",
                                         "magnitude": -0.6,
-                                        "id": visual_cubeid})
-
-        for i in range(50):
-            self.communicate([])
-
-        self.communicate([{"$type": "apply_force_magnitude_to_object",
-                           "magnitude": -0.15,
-                           "id": audio_cubeid},
-                           {"$type": "apply_force_magnitude_to_object",
-                           "magnitude": -0.15,
-                           "id": audio_cubeid},
-                           
-                           ])
+                                        "id": audio_cubeid},
+                    {"$type": "apply_force_magnitude_to_object",
+                                        "magnitude": -0.6,
+                                        "id": visual_cubeid}])
         
         for i in range(120):
             self.communicate([])
