@@ -35,7 +35,7 @@ def physics_videos():
                     "continuity_obj2" : 0,
                     "record_obj1 " : False,
                     "record_obj2" : False,
-                    "table2mat" : 2,
+                    "table2mat" : 1,
                     "scrape2" : 2,
                     "scrape1" : 2,
                     "cubemat" : 2,
