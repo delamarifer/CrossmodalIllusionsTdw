@@ -76,7 +76,7 @@ class DiscontScrapesDemo(Controller):
         self.impact_mat1 = impact_mat[int(configs['scrape1'])]
         self.impact_mat2 = impact_mat[int(configs['scrape2'])]
         # scrape material used for sound - small/medium/large
-        scrape_mat = [ScrapeMaterial.vinyl, ScrapeMaterial.bass_wood, ScrapeMaterial.ceramic]
+        scrape_mat = [ScrapeMaterial.vinyl, ScrapeMaterial.plywood, ScrapeMaterial.ceramic]
         self.scrapemat1 = scrape_mat[int(configs['scrape1'])]
         self.scrapemat2 = scrape_mat[int(configs['scrape2'])]
         # get library records
@@ -136,7 +136,7 @@ class DiscontScrapesDemo(Controller):
         Initialize audio, camera, and window settings
         """
 
-        audio = AudioInitializer(avatar_id="a", framerate=60)
+        audio = AudioInitializer(avatar_id="a", framerate=50)
         print(f"Video will be saved to: {self.capture_path}")
         # set camera position depending on number of objects
         if self.object_num > 1:
@@ -161,7 +161,7 @@ class DiscontScrapesDemo(Controller):
         # add empty room,  skybox and other screen-size and light settings
         commands = [TDWUtils.create_empty_room(40, 40),
                     {"$type": "set_target_framerate",
-                     "framerate": 60},
+                     "framerate": 50},
                     {"$type": "set_screen_size",
                      "width": self.window_w,
                      "height": self.window_h},
@@ -493,7 +493,7 @@ class DiscontScrapesDemo(Controller):
         print("****", mag_dis)
         self.communicate([
                     {"$type": "apply_force_magnitude_to_object",
-                                        "magnitude":0.55,
+                                        "magnitude":0.35,
                                         "id": audio_cubeid},
                     {"$type": "apply_force_magnitude_to_object",
                                         "magnitude": (neg*-1)*0.6,
@@ -547,7 +547,7 @@ class DiscontScrapesDemo(Controller):
 
         self.apply_force_visual_audio_cube(self.cube_id, self.cube_id2, -1)
         self.add_ons.pop(-1)
-        
+
         self.py_impact = PyImpact(rng=rng, static_audio_data_overrides={ self.cube_id3: cube_audio3}, initial_amp=0.9)
         self.add_ons.append(self.py_impact)
         self.apply_force_visual_audio_cube(self.cube_id, self.cube_id3, 1)
