@@ -533,7 +533,6 @@ class DiscontScrapesDemo(Controller):
        
 
 
-
         self.py_impact = PyImpact(rng=rng, static_audio_data_overrides={self.cube_id2: cube_audio2}, initial_amp=0.9)
         self.add_ons.append(self.py_impact)
 
