@@ -8,6 +8,8 @@ for vidfile in os.listdir(imgs_dir2):
         outfile = out_dir + vidfile
         if "shadow_True" in vidfile:
           cmd = "ffmpeg -ss 2.1 -i " + imgs_dir2 + vidfile + " -c:v libx264 -c:a aac " + outfile
+        elif "physics_True" in vidfile:
+          cmd = "ffmpeg -ss 3 -i " + imgs_dir2 + vidfile + " -c:v libx264 -c:a aac " + outfile
         else:
           cmd = "ffmpeg -ss 0.5 -i " + imgs_dir2 + vidfile + " -c:v libx264 -c:a aac " + outfile
         os.system(cmd)

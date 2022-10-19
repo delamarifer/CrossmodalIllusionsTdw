@@ -46,7 +46,7 @@ class DiscontScrapesDemo(Controller):
         self.run_type = "cam_" + configs['cam_view'] + "_discontlen_" + configs['discont_len']
         
         pbased = bool(int(configs["physics_based"]))
-        linearbool = bool(int(configs["linear_vel"]))
+        linearbool =int(configs["linear_vel"])
         shadowbool = bool(int(configs["shadow"]))
         self.lightx = bool(int(configs["lightx"]))
         self.linear_vel = linearbool
@@ -428,7 +428,7 @@ class DiscontScrapesDemo(Controller):
         # declare position and velocity vectors for continous cube
         if self.linear_vel == 0:
             velocity = np.linspace(1.5,0.5,path_len)
-        elif self.linear_vel == 1:
+        else:
             # velocity = self.get_poly_velocity(path_len)
             velocity = get_poly_velocity2(path_len,0)
             # list_pos = get_poly_velocity2(path_len,0)
@@ -449,12 +449,16 @@ class DiscontScrapesDemo(Controller):
             # velocity2 = self.get_poly_velocity(vel_pathlen2)
             velocity2 = get_poly_velocity2(vel_pathlen2, self.discont_len)
             print("*****", np.size(velocity2))
-        else:
+        elif self.linear_vel == 2:
             pre_velocity2 = np.linspace(1.5,0.3,path_len2)
             between_vel = np.repeat([0.000001], self.discont_len)
             post_velocity2 = np.linspace(1.5,0.3,path_len2)
             velocity2 = np.hstack(( pre_velocity2,between_vel,post_velocity2)).ravel()
-    
+        elif self.linear_vel == 3:
+            ix_sub_add = int(self.discont_len/2)
+            velocity2 = get_poly_velocity2(60, 0)
+            velocity2[path_len2-ix_sub_add:path_len2+ix_sub_add] = 0.000001
+                
          # declare position and velocity vectors for discontinous cube (add still frames in middle)
         pre_list_pos = np.linspace(zstart,center,path_len2)
         between_pos = np.repeat([center], self.discont_len)
@@ -481,21 +485,6 @@ class DiscontScrapesDemo(Controller):
        
         # Reset PyImpact and add it to the list of add-ons so that it automatically generates audio.
         
-
-        for i in range(20):
-            self.communicate([])
-    
-
-
-        self.communicate([
-                        {"$type": "apply_force_magnitude_to_object",
-                                        "magnitude": 0.0006,
-                                        "id": audio_cubeid},
-                        
-                        {"$type": "apply_force_magnitude_to_object",
-                                        "magnitude": 0.0006,
-                                        "id": visual_cubeid}])
-
 
         for i in range(120):
             self.communicate([])
@@ -543,23 +532,13 @@ class DiscontScrapesDemo(Controller):
         
        
 
-        # cube_audio3 = ObjectAudioStatic(name="cube",
-        #                                 object_id=self.cube_id3,
-        #                                 mass=self.cube_mass,
-        #                                 bounciness=self.cube_bounciness,
-        #                                 amp=0.9,
-        #                                 resonance=0.25,
-        #                                 size=1,
-        #                                 material=self.cube_audio_material)
+
 
         self.py_impact = PyImpact(rng=rng, static_audio_data_overrides={self.cube_id2: cube_audio2}, initial_amp=0.9)
         self.add_ons.append(self.py_impact)
 
         self.apply_force_visual_audio_cube(self.cube_id, self.cube_id2, -1)
-        # self.add_ons.pop(-1)
-        # self.py_impact = PyImpact(rng=rng, static_audio_data_overrides={self.cube_id2: cube_audio2, self.cube_id3: cube_audio3}, initial_amp=0.9)
-        # self.add_ons.append(self.py_impact)
-        # self.py_impact.reset()
+    
         self.apply_force_visual_audio_cube(self.cube_id, self.cube_id2, 1)
          # Define audio for the cube.
 

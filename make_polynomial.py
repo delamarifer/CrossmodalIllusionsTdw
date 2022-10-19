@@ -84,19 +84,27 @@ def get_poly_velocity2(path_len,discont_len):
     return  new_y
 
 
-# pre_velocity2 = np.linspace(1.5,0.05,30)
-# between_vel = np.repeat([0.000001], 4)
-# post_velocity2 = np.linspace(1.5,0.05,30)
-# y = np.hstack(( pre_velocity2,between_vel,post_velocity2)).ravel()
 
 # path_len2 = 30
-# ix_sub_add = int(4/2)
-# velocity2 = get_poly_velocity2(60, 0)
 
-# velocity2[path_len2-ix_sub_add:path_len2+ix_sub_add] = 0.000001
+# pre_velocity2 = np.linspace(1.5,0.3,path_len2)
+# between_vel = np.repeat([0.000001], 4)
+# post_velocity2 = np.linspace(1.5,0.3,path_len2)
+# velocity2 = np.hstack(( pre_velocity2,between_vel,post_velocity2)).ravel()
 
-# # # y = get_poly_velocity2(30,4)
-# # x = [x for x in range(len(y))]
+# # pre_velocity2 = np.linspace(1.5,0.05,30)
+# # between_vel = np.repeat([0.000001], 4)
+# # post_velocity2 = np.linspace(1.5,0.05,30)
+# # y = np.hstack(( pre_velocity2,between_vel,post_velocity2)).ravel()
+
+# # path_len2 = 30
+# # ix_sub_add = int(4/2)
+# # velocity2 = get_poly_velocity2(60, 0)
+
+# # velocity2[path_len2-ix_sub_add:path_len2+ix_sub_add] = 0.000001
+
+# # # # # y = get_poly_velocity2(30,4)
+# # # # x = [x for x in range(len(y))]
 # plot_poly([x for x in range(len(velocity2))],velocity2)
 
 # print(np.size(y))
