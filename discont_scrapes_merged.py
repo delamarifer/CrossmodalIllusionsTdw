@@ -261,7 +261,7 @@ class DiscontScrapesDemo(Controller):
             cube_mass = self.cube2_mass
             self.xpos = self.surface_record2.bounds["back"]["x"]+8
             self.ypos = self.surface_record2.bounds["top"]["y"]+self.cube_posy+0.05
-            zstart = zstart
+            zstart = zstart - 1.5
         
         if rank == 3:
             cube_id = self.cube_id3
@@ -493,7 +493,7 @@ class DiscontScrapesDemo(Controller):
         print("****", mag_dis)
         self.communicate([
                     {"$type": "apply_force_magnitude_to_object",
-                                        "magnitude":(neg*-1)*0.3,
+                                        "magnitude":0.55,
                                         "id": audio_cubeid},
                     {"$type": "apply_force_magnitude_to_object",
                                         "magnitude": (neg*-1)*0.6,
@@ -506,9 +506,9 @@ class DiscontScrapesDemo(Controller):
             self.communicate([])
 
 
-        self.communicate( {"$type": "apply_force_magnitude_to_object",
-                                        "magnitude":(neg*-1)*0.3,
-                                        "id": audio_cubeid})
+        # self.communicate( {"$type": "apply_force_magnitude_to_object",
+        #                                 "magnitude":(neg*-1)*0.3,
+        #                                 "id": audio_cubeid})
 
         for i in range(100):
             self.communicate([])
