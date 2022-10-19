@@ -260,7 +260,7 @@ class DiscontScrapesDemo(Controller):
             cube_id = self.cube_id2
             cube_mass = self.cube2_mass
             self.xpos = self.surface_record2.bounds["back"]["x"]+8
-            self.ypos = self.surface_record2.bounds["top"]["y"]+self.cube_posy+0.05
+            self.ypos = self.surface_record2.bounds["top"]["y"] 
             zstart = zstart - 1.5
         
         if rank == 3:
