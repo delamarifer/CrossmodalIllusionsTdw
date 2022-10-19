@@ -260,7 +260,7 @@ class DiscontScrapesDemo(Controller):
             cube_id = self.cube_id2
             cube_mass = self.cube2_mass
             self.xpos = self.surface_record2.bounds["back"]["x"]+8
-            self.ypos = self.surface_record2.bounds["top"]["y"] 
+            self.ypos = self.surface_record2.bounds["top"]["y"] +self.cube_posy+0.05
             zstart = zstart - 1.5
         
         if rank == 3:
@@ -268,7 +268,7 @@ class DiscontScrapesDemo(Controller):
             cube_mass = self.cube2_mass
             self.xpos = self.surface_record2.bounds["back"]["x"]+8.3
             self.ypos = self.surface_record2.bounds["top"]["y"]+self.cube_posy+0.05
-            zstart = zstart
+            zstart = zstart - 1.5
 
         self.commands.extend(self.get_add_physics_object(model_name="cube",
                                                     library="models_flex.json",
@@ -324,9 +324,9 @@ class DiscontScrapesDemo(Controller):
             self.cube_id2 = self.get_unique_id()
             self.add_cube(zstart, 2)
         
-        # if self.physics_based:
-        #     self.cube_id3 = self.get_unique_id()
-        #     self.add_cube(zstart, 3)
+        if self.physics_based:
+            self.cube_id3 = self.get_unique_id()
+            self.add_cube(zstart, 3)
 
     def place_objects_start_capture(self):
         """
@@ -529,6 +529,15 @@ class DiscontScrapesDemo(Controller):
                                         resonance=0.25,
                                         size=1,
                                         material=self.cube_audio_material)
+
+        cube_audio3 = ObjectAudioStatic(name="cube",
+                                        object_id=self.cube_id3,
+                                        mass=self.cube_mass,
+                                        bounciness=self.cube_bounciness,
+                                        amp=0.9,
+                                        resonance=0.25,
+                                        size=1,
+                                        material=self.cube_audio_material)
         
        
 
@@ -537,8 +546,11 @@ class DiscontScrapesDemo(Controller):
         self.add_ons.append(self.py_impact)
 
         self.apply_force_visual_audio_cube(self.cube_id, self.cube_id2, -1)
-    
-        self.apply_force_visual_audio_cube(self.cube_id, self.cube_id2, 1)
+        self.add_ons.pop(-1)
+        
+        self.py_impact = PyImpact(rng=rng, static_audio_data_overrides={ self.cube_id3: cube_audio3}, initial_amp=0.9)
+        self.add_ons.append(self.py_impact)
+        self.apply_force_visual_audio_cube(self.cube_id, self.cube_id3, 1)
          # Define audio for the cube.
 
         self.add_ons.pop(-1)
