@@ -493,10 +493,10 @@ class DiscontScrapesDemo(Controller):
         print("****", mag_dis)
         self.communicate([
                     {"$type": "apply_force_magnitude_to_object",
-                                        "magnitude":0.35,
+                                        "magnitude":0.003,
                                         "id": audio_cubeid},
                     {"$type": "apply_force_magnitude_to_object",
-                                        "magnitude": (neg*-1)*0.6,
+                                        "magnitude": (neg*-1)*0.003,
                                         "id": visual_cubeid}])
         num_dis = 40 + (10*(self.discont_len-2))
         
