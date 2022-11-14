@@ -10,9 +10,11 @@ def physics_videos():
     linear_v = 1
     discont_l = 1
     physicsb = 1
+    # discont_l = 2
     for lightx in range(2):
-        for cam_v in range(4):
-            for discont_l in [2,4,6]:
+        
+        for discont_l in range(3):
+            for cam_v in range(4):
                 # if physicsb == 1:
                     
                 #Assume we need 2 sections in the config file, let's call them USERINFO and SERVERCONFIG
@@ -28,18 +30,19 @@ def physics_videos():
                     "discont_len" : discont_l,
                     "mass" : 1,
                     "secondmass" : 1,
-                    "table1mat" : 1,
+                    "table1mat" : 0,
                     "object_num" : 2,
                     "high_def" : True ,
                     "continuity_obj1" : 0,
                     "continuity_obj2" : 0,
                     "record_obj1 " : False,
                     "record_obj2" : False,
-                    "table2mat" : 1,
+                    "table2mat" : 0,
                     "scrape2" : 2,
                     "scrape1" : 2,
                     "cubemat" : 2,
                     "cube2mat" : 2,
+                    "cube3mat" : 0,
                     "change_mass_mid" : False,
                     "change_mat_mid" : False,
                     "cube_size" : 0,

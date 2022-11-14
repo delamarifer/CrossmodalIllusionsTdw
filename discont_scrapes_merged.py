@@ -2,7 +2,9 @@
 Simulate the scraping of a cube. 
 (Continous visual trajectory with discontinous trajectory of audio - pause in the middle)
 """
+from typing import List
 import math
+from tdw.output_data import OutputData, Transforms, Rigidbodies
 import numpy as np
 from tdw.physics_audio.audio_material import AudioMaterial
 from tdw.physics_audio.object_audio_static import ObjectAudioStatic
@@ -33,6 +35,12 @@ import time
 from tdw.output_data import OutputData, Rigidbodies, StaticRigidbodies
 from tdw.add_ons.object_manager import ObjectManager
 from make_polynomial import get_poly_velocity2
+import pathlib 
+from csv import DictWriter
+csv_path = "C:/Users/TDWAdmin/Developer/CrossmodalIllusionsTdw"
+csv_file = "position_vector.csv"
+csv_path = pathlib.Path(csv_path, csv_file)
+
 
 class DiscontScrapesDemo(Controller):
     """
@@ -56,25 +64,28 @@ class DiscontScrapesDemo(Controller):
         Controller.MODEL_LIBRARIANS["models_core.json"] = ModelLibrarian("models_core.json")
         Controller.MODEL_LIBRARIANS["models_flex.json"] = ModelLibrarian("models_flex.json")
         # visual material of tables
-        visual_mat_table = ['b05_table_new', "willisau_varion_w3_table", 'glass_table']
+        visual_mat_table = ['quatre_dining_table', "willisau_varion_w3_table", 'glass_table']
         self.scrape_surface_model_name = visual_mat_table[int(configs['table1mat'])]
         self.scrape_surface2_model_name = visual_mat_table[int(configs['table2mat'])]
         # visual material of cube
         visual_mat_cube = ['ceramic_raw_striped', 'wood_beech_natural', 'metal_cast_iron']
         self.scrape_surface_cube1_name = visual_mat_cube[int(configs['cubemat'])]
         self.scrape_surface_cube2_name = visual_mat_cube[int(configs['cube2mat'])]
+        self.scrape_surface_cube3_name = visual_mat_cube[int(configs['cube3mat'])]
         self.cube_visual_material = self.scrape_surface_cube1_name
         self.cube_visual_material2 = self.scrape_surface_cube2_name
+        self.cube_visual_material3 = self.scrape_surface_cube3_name
         # cube y-position depending on type
-        cubey = {'b05_table_new': 0.2, "willisau_varion_w3_table": 0, 'glass_table':0}
+        cubey = {'b05_table_new': 0.2, "willisau_varion_w3_table": 0, 'glass_table':0, 'quatre_dining_table':0}
         self.cube_posy = cubey[self.scrape_surface_model_name]
         # scale of the table depending on type
-        table_scale ={'b05_table_new':{"x": 1, "y": 1.3, "z": 14},"willisau_varion_w3_table":{"x": 0.5, "y": 1, "z": 13}, 'glass_table':{"x": 0.8, "y": 1, "z": 12}}
+        table_scale ={'quatre_dining_table':{"x": 1, "y": 1, "z": 1.5},"willisau_varion_w3_table":{"x": 0.5, "y": 1, "z":2}, 'glass_table':{"x": 0.8, "y": 1, "z": 3}}
         self.table1_scale = table_scale[self.scrape_surface_model_name]
         self.table2_scale = table_scale[self.scrape_surface2_model_name]
-        impact_mat = ["plastic_hard_1", "wood_soft_1", "glass_1", "stone_4", "metal_1"]
+        impact_mat = ["plastic_hard_1", "wood_hard_3", "glass_1", "stone_4", "metal_1"]
         self.impact_mat1 = impact_mat[int(configs['scrape1'])]
         self.impact_mat2 = impact_mat[int(configs['scrape2'])]
+        # self.impact_mat3 = impact_mat[int(configs['scrape3'])]
         # scrape material used for sound - small/medium/large
         scrape_mat = [ScrapeMaterial.vinyl, ScrapeMaterial.plywood, ScrapeMaterial.ceramic]
         self.scrapemat1 = scrape_mat[int(configs['scrape1'])]
@@ -85,12 +96,12 @@ class DiscontScrapesDemo(Controller):
         # define applied force (only relevant when simulating physics)
         force = 0.5
         # mass of cubes (doesn't matter since object is teleported)
-        masses = [0.01,1,100]
+        masses = [0.01,0.05,100]
         self.cube_mass = masses[int(configs['mass'])]
         self.cube2_mass = masses[int(configs['secondmass'])]
         self.cube_bounciness = 0
         # visual cube scale 
-        scale_dict = {0:{"x": 0.1, "y": 0.04, "z": 0.1}, 1: {"x": 0.5, "y": 0.3, "z": 0.5}}
+        scale_dict = {0:{"x": 0.10, "y": 0.04, "z": 0.10}, 1: {"x": 0.10, "y": 0.4, "z": 0.10}}
         self.scale_factor_cube = scale_dict[int(configs['cube_size'])]
         # long or short scrape 
         self.scrape_length = int(configs['scrape_length'])
@@ -99,17 +110,17 @@ class DiscontScrapesDemo(Controller):
         self.shadow_present = int(configs['shadow'])
         self.obstacle_present = int(configs['obstacle'])
         cam_pos = [
-            {"x": 1.2, "y": 1.4, "z": -2.86},
-            {"x": 1, "y": 1.2, "z": 3.8},
-            {"x": 0, "y": 1.4, "z": -3.5},
-            {"x": 4.1, "y":3, "z": 0.3},
+            {"x": 1.2, "y": 1.7, "z": -1.86},
+            {"x": 1, "y": 1.5, "z": 2},
+            {"x": 0, "y": 1.2, "z": -2.4},
+            {"x": 4.1, "y":3.4, "z": 0.3},
             {"x": -4.2, "y":3.6, "z": 0.3},
         ]
         cam_view = [
             {"x": -0.4, "y": 0.5, "z": 0},
             {"x": -0.4, "y": 0.5, "z": 0},
-            {"x": 0, "y": 0.5, "z": 0},
-            {"x": 0.7, "y":0.5, "z": 0.3},
+            {"x": 0, "y": 0.7, "z": 0},
+            {"x": 0.7, "y":0.6, "z": 0.3},
             {"x": 0.7, "y":1.5, "z": 0.3}
         ]
         self.look_at = cam_view[int(configs['cam_view'])]
@@ -168,7 +179,7 @@ class DiscontScrapesDemo(Controller):
                     {"$type": "rotate_directional_light_by",
                      "angle": 175},
                     {"$type": "set_aperture",
-                     "aperture": 8.0},
+                     "aperture": 100.0},
                     {"$type": "set_shadow_strength",
                      "strength": 1.0}]
                     
@@ -196,14 +207,14 @@ class DiscontScrapesDemo(Controller):
                                                     object_id=self.surface2_id,
                                                     kinematic=True,
                                                     scale_factor=self.table2_scale,
-                                                    position={"x": self.surface_record.bounds["back"]["x"]+8, "y": 0, "z": 0}))
+                                                    position={"x": self.surface_record.bounds["back"]["x"]+3, "y": 0, "z": 0}))
     
     def add_shadow_cube(self, zstart):
         """
         To get a physically implausible scene, we add a secondary cube
         so that the first cube and float and project a shadow. 
         """
-        c_vis_mat = self.cube_visual_material
+        c_vis_mat = self.cube_visual_material2
         self.commands.extend(self.get_add_physics_object(model_name="cube",
                                                         library="models_flex.json",
                                                         object_id=self.shadow_cube,
@@ -254,21 +265,33 @@ class DiscontScrapesDemo(Controller):
 
         cube_id = self.cube_id
         self.xpos = 0
-        self.ypos = self.surface_record.bounds["top"]["y"]+ self.cube_posy+lift_cube
+        self.ypos = self.surface_record.bounds["top"]["y"]+ self.cube_posy+lift_cube+0.05
         cube_mass = self.cube_mass
+        zstart = zstart + 1
         if rank == 2:
             cube_id = self.cube_id2
             cube_mass = self.cube2_mass
-            self.xpos = self.surface_record2.bounds["back"]["x"]+8
+            self.xpos = self.surface_record2.bounds["back"]["x"]+3
             self.ypos = self.surface_record2.bounds["top"]["y"] +self.cube_posy+0.05
-            zstart = zstart - 1.5
+            
         
         if rank == 3:
             cube_id = self.cube_id3
+            c_vis_mat = self.cube_visual_material2
             cube_mass = self.cube2_mass
-            self.xpos = self.surface_record2.bounds["back"]["x"]+8.3
+            self.xpos = self.surface_record2.bounds["back"]["x"]+3.3
             self.ypos = self.surface_record2.bounds["top"]["y"]+self.cube_posy+0.05
-            zstart = zstart - 1.5
+            # zstart = zstart 
+
+        if rank == 4:
+            cube_id = self.cube_id4
+            c_vis_mat = self.cube_visual_material3
+            cube_mass = self.cube2_mass
+            self.xpos = self.surface_record2.bounds["back"]["x"]+3.5
+            self.ypos = self.surface_record2.bounds["top"]["y"]+self.cube_posy+0.05
+            # zstart = zstart 
+
+
 
         self.commands.extend(self.get_add_physics_object(model_name="cube",
                                                     library="models_flex.json",
@@ -279,8 +302,8 @@ class DiscontScrapesDemo(Controller):
                                                     scale_factor=self.scale_factor_cube,
                                                     default_physics_values=False,
                                                     mass=cube_mass,
-                                                    dynamic_friction=0.2,
-                                                    static_friction=0.2,
+                                                    dynamic_friction=.02,
+                                                    static_friction=.025,
                                                     bounciness=self.cube_bounciness))    
     
         
@@ -302,7 +325,7 @@ class DiscontScrapesDemo(Controller):
 
         # add first cube
         self.cube_id = self.get_unique_id()    
-        zstart = self.surface_record.bounds["back"]["z"]-1.5
+        zstart = self.surface_record.bounds["back"]["z"]-1
         self.zstart = zstart
         if self.scrape_length: # long
             zstart = zstart - 2
@@ -327,6 +350,8 @@ class DiscontScrapesDemo(Controller):
         if self.physics_based:
             self.cube_id3 = self.get_unique_id()
             self.add_cube(zstart, 3)
+            self.cube_id4 = self.get_unique_id()
+            self.add_cube(zstart, 4)
 
     def place_objects_start_capture(self):
         """
@@ -337,10 +362,18 @@ class DiscontScrapesDemo(Controller):
                 "output_path": str(self.capture_path.resolve()),
                 "position": self.capture_position,
                 "log_args": True,
-                "audio_device": self.audio_device}
+                "audio_device": self.audio_device},
+                  
         ])
 
-        self.communicate(self.commands)
+        self.commands.extend([{"$type": "send_transforms",
+             "frequency": "always",
+             "ids": [self.cube_id]},
+                {"$type": "send_rigidbodies",
+             "frequency": "always",
+             "ids": [self.cube_id]}])
+
+        resp = self.communicate(self.commands)
 
     
     def teleport_motion(self, velocity, list_pos, velocity2, list_pos2):
@@ -356,9 +389,9 @@ class DiscontScrapesDemo(Controller):
         if self.shadow_present:
             lift_cube = 0.2
 
-        for i,z in enumerate(list_pos2):
+        for i,z in enumerate(list_pos2[:-1]):
             contact_normals = []
-
+            print(i)
             z2 = list_pos2[i]
             z = list_pos[i]
             zshadow = list_pos[len(list_pos)-i-1]
@@ -401,7 +434,7 @@ class DiscontScrapesDemo(Controller):
                 self.communicate([
                     {"$type": "teleport_object",
                         "position": {
-                                    "x": self.surface_record.bounds["top"]["x"]+8, 
+                                    "x": self.surface_record.bounds["top"]["x"]+3, 
                                     "y": self.surface_record2.bounds["top"]["y"], 
                                     "z": z2},
                         "id": self.cube_id2},
@@ -420,51 +453,58 @@ class DiscontScrapesDemo(Controller):
         """
         rng = np.random.RandomState(0)
         # starting position of objects
-        zstart = self.surface_record.bounds["back"]["z"]-1.5
-        center = zstart+1.2+1.2
-        end = zstart+2.4+2.4
+        zstart = self.surface_record.bounds["back"]["z"]
+        center = zstart+1
+        end = zstart+2.5
         path_len = 60
 
-        # declare position and velocity vectors for continous cube
-        if self.linear_vel == 0:
-            velocity = np.linspace(1.5,0.5,path_len)
-        else:
-            # velocity = self.get_poly_velocity(path_len)
-            velocity = get_poly_velocity2(path_len,0)
-            # list_pos = get_poly_velocity2(path_len,0)
-            # [print(x) for x in list_pos]
+        # # declare position and velocity vectors for continous cube
+        # if self.linear_vel == 0:
+        #     velocity=np.arange(0,path_len)*0.0001+1
+        #     # velocity = np.linspace(1.5,0.5,path_len)
+        # else:
+        #     # velocity = self.get_poly_velocity(path_len)
+        #     velocity = get_poly_velocity2(path_len,0)
+        #     # list_pos = get_poly_velocity2(path_len,0)
+        #     # [print(x) for x in list_pos]
        
 
-        list_pos = np.linspace(zstart,end,path_len)
+        # list_pos = np.arange(0,path_len)*0.0001+1
 
 
-        path_len2 = int(path_len/2 - math.ceil(self.discont_len/2))
-        if self.linear_vel == 0:  
-            pre_velocity2 = np.linspace(1.5,1,path_len2)
-            between_vel = np.repeat([0.000001], self.discont_len)
-            post_velocity2 = np.linspace(1,0.5,path_len2)
-            velocity2 = np.hstack(( pre_velocity2,between_vel,post_velocity2)).ravel()       
-        elif self.linear_vel == 1:
-            vel_pathlen2 = int(path_len/2 - math.ceil(self.discont_len/2))
-            # velocity2 = self.get_poly_velocity(vel_pathlen2)
-            velocity2 = get_poly_velocity2(vel_pathlen2, self.discont_len)
-            print("*****", np.size(velocity2))
-        elif self.linear_vel == 2:
-            pre_velocity2 = np.linspace(1.5,0.3,path_len2)
-            between_vel = np.repeat([0.000001], self.discont_len)
-            post_velocity2 = np.linspace(1.5,0.3,path_len2)
-            velocity2 = np.hstack(( pre_velocity2,between_vel,post_velocity2)).ravel()
-        elif self.linear_vel == 3:
-            ix_sub_add = int(self.discont_len/2)
-            velocity2 = get_poly_velocity2(60, 0)
-            velocity2[path_len2-ix_sub_add:path_len2+ix_sub_add] = 0.000001
+        # path_len2 = int(path_len/2 - math.ceil(self.discont_len/2))
+        # if self.linear_vel == 0:  
+        #     velocity2 =np.arange(0,path_len)*0.0001+1
+        #     # pre_velocity2 = np.linspace(1.5,1,path_len2)
+        #     # between_vel = np.repeat([0.000001], self.discont_len)
+        #     # post_velocity2 = np.linspace(1,0.5,path_len2)
+        #     # velocity2 = np.hstack(( pre_velocity2,between_vel,post_velocity2)).ravel()       
+        # elif self.linear_vel == 1:
+        #     vel_pathlen2 = int(path_len/2 - math.ceil(self.discont_len/2))
+        #     # velocity2 = self.get_poly_velocity(vel_pathlen2)
+        #     velocity2 = get_poly_velocity2(vel_pathlen2, self.discont_len)
+        #     print("*****", np.size(velocity2))
+        # elif self.linear_vel == 2:
+        #     pre_velocity2 = np.linspace(1.5,0.3,path_len2)
+        #     between_vel = np.repeat([0.000001], self.discont_len)
+        #     post_velocity2 = np.linspace(1.5,0.3,path_len2)
+        #     velocity2 = np.hstack(( pre_velocity2,between_vel,post_velocity2)).ravel()
+        # elif self.linear_vel == 3:
+        #     ix_sub_add = int(self.discont_len/2)
+        #     velocity2 = get_poly_velocity2(60, 0)
+        #     velocity2[path_len2-ix_sub_add:path_len2+ix_sub_add] = 0.000001
                 
-         # declare position and velocity vectors for discontinous cube (add still frames in middle)
-        pre_list_pos = np.linspace(zstart,center,path_len2)
-        between_pos = np.repeat([center], self.discont_len)
-        post_list_pos = np.linspace(center,end,path_len2)
-        list_pos2 = np.hstack(( pre_list_pos,between_pos,post_list_pos)).ravel()
+        #  # declare position and velocity vectors for discontinous cube (add still frames in middle)
+        # pre_list_pos = np.linspace(zstart,center,path_len2)
+        # between_pos = np.repeat([center], self.discont_len)
+        # post_list_pos = np.linspace(center,end,path_len2)
+        # list_pos2 = np.hstack(( pre_list_pos,between_pos,post_list_pos)).ravel()
         
+        list_pos = np.arange(zstart-1.1,30)*-0.05+0.5
+        print(len(list_pos))
+        list_pos2 = list_pos
+        velocity2 = 0.5*np.exp(np.linspace(0.9,0.2,32))
+        velocity = velocity2
 
         # send the forward motion
         self.teleport_motion(velocity,list_pos,velocity2,list_pos2)
@@ -479,39 +519,82 @@ class DiscontScrapesDemo(Controller):
     def terminate_scene(self):
         self.communicate({"$type": "stop_video_capture"})
 
+        if self.physics_based:
+            print(self.positions)
+            # np.save(str(self.capture_path.resolve())[:-4], np.array(self.positions))
+            
+            with open(csv_path,'a') as f_object:
+                writer_object = DictWriter(f_object, fieldnames=["x", "y", "z"])
+                for row in self.positions:
+                    row_dict = {"x": row[0], "y": row[1], "z": row[2]}
+                    writer_object.writerow(row_dict)
+                # writer_object.writerow(self.velocity_dict)
+
+                f_object.close()
+ 
         self.communicate({"$type": "terminate"})
     
     def apply_force_visual_audio_cube(self, visual_cubeid, audio_cubeid, neg):
        
         # Reset PyImpact and add it to the list of add-ons so that it automatically generates audio.
         
+        forces = [0.00001, 0.000045,0.00006]
+        forces_second = [0.000075, 0.000045,0.000035]
+        epochs = [30, 40, 75]
+
+        
 
         for i in range(120):
-            self.communicate([])
-
-        mag_dis = .15 + (.05*(self.discont_len-2))
-        print("****", mag_dis)
+            for i in range(len(self.resp) - 1):
+                r_id = OutputData.get_data_type_id(self.resp[i])
+                print(r_id)
+                if r_id == "tran":
+                    transforms = Transforms(self.resp[i])
+                    for j in range(transforms.get_num()):
+                        if transforms.get_id(j) == self.cube_id:
+                            self.positions.append(transforms.get_position(j))
+            self.resp = self.communicate([])
+        f = forces[self.discont_len]
+        f2 = forces_second[self.discont_len]
+        num_dis = epochs[self.discont_len]
+ 
         self.communicate([
                     {"$type": "apply_force_magnitude_to_object",
-                                        "magnitude":0.003,
+                                        "magnitude":(neg*-1)*f,
                                         "id": audio_cubeid},
                     {"$type": "apply_force_magnitude_to_object",
-                                        "magnitude": (neg*-1)*0.003,
+                                        "magnitude": (neg*-1)*f,
                                         "id": visual_cubeid}])
-        num_dis = 40 + (10*(self.discont_len-2))
-        
-        print("****", num_dis)
-        print("****", 0.60-mag_dis)
+  
         for i in range(num_dis):
-            self.communicate([])
+            for i in range(len(self.resp) - 1):
+                r_id = OutputData.get_data_type_id(self.resp[i])
+                print(r_id)
+                if r_id == "tran":
+                    transforms = Transforms(self.resp[i])
+                    for j in range(transforms.get_num()):
+                        if transforms.get_id(j) == self.cube_id:
+                            self.positions.append(transforms.get_position(j))
+            self.resp = self.communicate([])
 
 
-        # self.communicate( {"$type": "apply_force_magnitude_to_object",
-        #                                 "magnitude":(neg*-1)*0.3,
-        #                                 "id": audio_cubeid})
+        self.communicate([{"$type": "apply_force_magnitude_to_object",
+                                        "magnitude":(neg*-1)*f2,
+                                        "id": audio_cubeid},
+                    {"$type": "apply_force_magnitude_to_object",
+                                        "magnitude": (neg*-1)*f2,
+                                        "id": visual_cubeid}])
 
         for i in range(100):
-            self.communicate([])
+            for i in range(len(self.resp) - 1):
+                r_id = OutputData.get_data_type_id(self.resp[i])
+                print(r_id)
+                if r_id == "tran":
+                    transforms = Transforms(self.resp[i])
+                    for j in range(transforms.get_num()):
+                        if transforms.get_id(j) == self.cube_id:
+                            self.positions.append(transforms.get_position(j))
+            self.resp = self.communicate([])
 
         
         # Remove PyImpact from the list of add-ons.
@@ -530,8 +613,19 @@ class DiscontScrapesDemo(Controller):
                                         size=1,
                                         material=self.cube_audio_material)
 
+        self.cube_audio_material = AudioMaterial.wood_medium
         cube_audio3 = ObjectAudioStatic(name="cube",
                                         object_id=self.cube_id3,
+                                        mass=self.cube_mass,
+                                        bounciness=self.cube_bounciness,
+                                        amp=0.9,
+                                        resonance=0.25,
+                                        size=1,
+                                        material=self.cube_audio_material)
+
+        self.cube_audio_material = AudioMaterial.wood_medium
+        cube_audio4 = ObjectAudioStatic(name="cube",
+                                        object_id=self.cube_id4,
                                         mass=self.cube_mass,
                                         bounciness=self.cube_bounciness,
                                         amp=0.9,
@@ -542,20 +636,107 @@ class DiscontScrapesDemo(Controller):
        
 
 
-        self.py_impact = PyImpact(rng=rng, static_audio_data_overrides={self.cube_id2: cube_audio2}, initial_amp=0.9)
+        self.py_impact = PyImpact(rng=rng,  initial_amp=0.9)
+        
         self.add_ons.append(self.py_impact)
 
-        self.apply_force_visual_audio_cube(self.cube_id, self.cube_id2, -1)
-        self.add_ons.pop(-1)
+        self.py_impact._excluded_objects.append(self.cube_id)
 
-        self.py_impact = PyImpact(rng=rng, static_audio_data_overrides={ self.cube_id3: cube_audio3}, initial_amp=0.9)
-        self.add_ons.append(self.py_impact)
-        self.apply_force_visual_audio_cube(self.cube_id, self.cube_id3, 1)
+        self.positions: List[np.array] = list()
+
+        self.apply_force_visual_audio_cube(self.cube_id, self.cube_id4, -1)
+        # self.add_ons.pop(-1)
+
+        # self.py_impact = PyImpact(rng=rng, static_audio_data_overrides={ self.cube_id3: cube_audio3}, initial_amp=0.9)
+        # self.add_ons.append(self.py_impact)
+
+        
+        self.apply_force_visual_audio_cube(self.cube_id, self.cube_id4, 1)
+
+        # self.apply_force_visual_audio_cube(self.cube_id, self.cube_id4, -1)
          # Define audio for the cube.
 
         self.add_ons.pop(-1)
      
          # Define audio for the cube.
+    
+    def move_cube(self, velocity_vector, position_vector):
+        rng = np.random.RandomState(0)
+        self.py_impact = PyImpact(rng=rng,  initial_amp=0.9)
+        self.add_ons.append(self.py_impact)
+
+        # self.velocity_vector = velocity_vector
+        self.position_vector = position_vector
+        self.velocity_vector = self.position_vector.diff()
+        
+        self.list_pos = np.linspace(self.zstart+1, self.zstart + 2.5, len(self.position_vector.values))
+        self.list_pos = np.arange(self.zstart+1,len(self.velocity_vector.values))*-0.005+1.5
+        impact_material = self.impact_mat1
+        scrape_material = self.scrapemat1
+        massofcube = self.cube_mass
+        lift_cube = 0
+
+        self.position_vector_shadow = self.position_vector.reindex(index= self.position_vector.index[::-1])
+
+        for i in range(len(self.position_vector.values)):
+            contact_normals = []
+
+            
+            # xyz = {"x":0, "y":self.surface_record.bounds["top"]["y"]+self.cube_posy+lift_cube, "z": tuple(self.position_vector.values[i])[2]}
+            
+            x = tuple(self.position_vector.values[i])[0]
+            y = tuple(self.position_vector.values[i])[1]
+            # y =
+            z = tuple(self.position_vector.values[i])[2]
+
+            
+            xshadow = tuple(self.position_vector_shadow.values[i])[0]
+            yshadow = tuple(self.position_vector_shadow.values[i])[1]
+            # y =
+            zshadow = tuple(self.position_vector_shadow.values[i])[2]
+    
+            # Three directional vectors perpendicular to the collision.
+            
+            for k in range(3):
+                contact_normals.append(np.array([0, 1, 0]))
+            
+
+            # s = self.py_impact.get_scrape_sound(velocity=np.array([tuple(self.velocity_vector.values[i+1])[0], tuple(self.velocity_vector.values[i+1])[1], tuple(self.velocity_vector.values[i+1])[2]]),
+            #                             contact_normals=contact_normals,
+            #                             primary_id=0,
+            #                             primary_material=impact_material,
+            #                             primary_amp=0.2,
+            #                             primary_mass=massofcube,
+            #                             secondary_id=1,
+            #                             secondary_material=impact_material,
+            #                             secondary_amp=0.5,
+            #                             secondary_mass=100,
+            #                             primary_resonance=0.2,
+            #                             secondary_resonance=0.1,
+            #                             scrape_material=scrape_material)
+            
+            # Teleport cube
+            self.communicate([{"$type": "teleport_object",
+                            "position":
+                                {"x": x-0.2, "y": y+0.15, "z": z},
+                            "id": self.cube_id},
+                            {"$type": "teleport_object",
+                                    "position":
+                                        {"x": x+0.2, "y": y, "z": z*-1},
+                                    "id": self.shadow_cube}
+                        #     {"$type": "play_audio_data",
+                        # "id": Controller.get_unique_id(),
+                        # "position": self.cam_point,
+                        # "wav_data": s.wav_str,
+                        # "num_frames": s.length}
+                        ])
+
+             # If shadow condition, teleport secondary cube
+            if self.shadow_present:
+                self.communicate([{"$type": "teleport_object",
+                                    "position":
+                                        {"x": x+0.2, "y": y, "z": z*-1},
+                                    "id": self.shadow_cube}])
      
 
 if __name__ == "__main__":
@@ -569,6 +750,7 @@ if __name__ == "__main__":
     config_object.read(directory_cfg)
     configs = config_object["all"]
 
+    print("*****", int(configs["physics_based"]))
 
     scrapesObj = DiscontScrapesDemo(configs)
     scrapesObj.initialize_scene()
@@ -577,5 +759,9 @@ if __name__ == "__main__":
     if int(configs["physics_based"]):
        scrapesObj.apply_forces()
     else:
-        scrapesObj.teleport_objects()
+        import pandas as pd
+        velocity_vector = pd.read_csv('velocity_vector.csv')
+        position_vector = pd.read_csv('position_vector.csv')
+        print(position_vector)
+        scrapesObj.move_cube(velocity_vector, position_vector)
     scrapesObj.terminate_scene()
